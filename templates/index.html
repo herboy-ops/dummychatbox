@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot - Bihar Electricity Dept</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js"></script>
+    
+    <style>
+        body { background-color: #f4f4f4; font-family: Arial, sans-serif; }
+        .chatbot-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 28px;
+            animation: bounce 1.5s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .chat-container {
+            width: 400px;
+            height: 500px;
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        .chat-header {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-box {
+            height: 370px;
+            overflow-y: auto;
+            padding: 10px;
+            background: #f8f9fa;
+        }
+        .chat-footer {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+        .chat-footer input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .chat-footer button {
+            margin-left: 5px;
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .user-message {
+            background: #d1ecf1;
+            text-align: right;
+        }
+        .bot-message {
+            background: #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chatbot-icon" id="chatbot-icon">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <div class="chat-container" id="chat-container">
+        <div class="chat-header">
+            <span><i class="fas fa-robot"></i>  𝕽𝖆𝖍𝖚𝖑 ✍ 𝙰𝙸 𝙲𝚑𝚊𝚝𝚋𝚘𝚝</span>
+            <span style="cursor: pointer;" onclick="toggleChat()">&times;</span>
+        </div>
+        <div class="chat-box" id="chat-box">
+            <div class="message bot-message">Bot: Hello! How can I help you? 😊</div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="user-input" placeholder="Type your message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            let chat = document.getElementById("chat-container");
+            chat.style.display = (chat.style.display === "none" || chat.style.display === "") ? "block" : "none";
+        }
+
+        document.getElementById("chatbot-icon").addEventListener("click", function() {
+            toggleChat();
+        });
+
+        function sendMessage() {
+            let userMessage = document.getElementById("user-input").value.trim();
+            if (userMessage === "") return;
+
+            let chatBox = document.getElementById("chat-box");
+
+            // Append user message
+            chatBox.innerHTML += `<div class='message user-message'>You: ${userMessage}</div>`;
+
+            // Clear input field
+            document.getElementById("user-input").value = "";
+
+            // Scroll to the latest message
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Send message to backend
+            $.post("/chat/", { message: userMessage }, function(response) {
+                console.log(response); // Debugging response
+                
+                if (!response || response.reply === undefined) {
+                    chatBox.innerHTML += `<div class='message bot-message'>Bot: Sorry, I didn't understand that. 😕</div>`;
+                } else if (response.type === "bill") {
+                    chatBox.innerHTML += `
+                        <div class='message bot-message'>
+                            <div class="card" style="border-left: 5px solid #28a745; padding: 10px; border-radius: 8px; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);">
+                                <div class="card-body">
+                                    <h5 class="card-title">🔹 Account ${response.account} Details</h5>
+                                    <table class="table table-bordered">
+                                        <tr><td>👤 <b>Name:</b></td><td>${response.name}</td></tr>
+                                        <tr><td>⚡ <b>Consumer Load:</b></td><td>${response.load} kW</td></tr>
+                                        <tr><td>🔢 <b>Meter Number:</b></td><td>${response.meter}</td></tr>
+                                        <tr><td>📜 <b>Billing Status:</b></td><td><span style="color:green;">${response.status}</span></td></tr>
+                                        <tr><td>🗓️ <b>Last Bill Month-Year:</b></td><td>${response.bill_month}</td></tr>
+                                        <tr><td>💰 <b>Bill Amount:</b></td><td>₹${response.bill_amount} ✅</td></tr>
+                                        <tr><td>💵 <b>Amount Paid:</b></td><td>₹${response.paid_amount}</td></tr>
+                                        <tr><td>🏢 <b>Office:</b></td><td>${response.office}</td></tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>`;
+                } else {
+                    chatBox.innerHTML += `<div class='message bot-message'>Bot: ${response.reply}</div>`;
+                }
+
+                // Scroll to the latest message
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }).fail(function() {
+                chatBox.innerHTML += `<div class='message bot-message'>Bot: Oops! Something went wrong. Try again later.</div>`;
+            });
+        }
+    </script>
+
+</body>
+</html>
